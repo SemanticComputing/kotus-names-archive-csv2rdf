@@ -1,0 +1,46 @@
+output
+nimiarkisto_with_wsg84.csv
+nimiarkisto_with_wsg84_100.csv
+nimiarkisto.csv
+Kotus_Nadigi_050318.csv
+
+# Python
+*.py[co]
+*.pot
+.coverage
+pyvenv.cfg
+pip-selfcheck.json
+
+# Packages
+lib
+lib64
+share
+*.egg
+*.egg-info
+dist
+build
+eggs
+parts
+bin
+var
+sdist
+develop-eggs
+.installed.cfg
+
+
+# Installer logs
+pip-log.txt
+
+#Dev tools
+.project
+.pydevproject
+.settings/
+.idea
+
+# Backup files
+*~
+
+# Logs
+*.log
+
+*.csv#*

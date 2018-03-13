@@ -1,0 +1,7 @@
+pandas>=0.17.0
+iso8601
+rdflib>=4.2.1
+jellyfish>=0.5.6
+pyprind
+responses
+python-slugify>=1.2.1
