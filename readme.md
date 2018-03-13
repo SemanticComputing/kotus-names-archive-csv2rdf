@@ -1,4 +1,4 @@
-# Institute for the Languages of Finland (Kotus) Digital Names CSV to RDF conversion
+# Institute for the Languages of Finland (Kotus) Digital Names Archive CSV to RDF conversion
 
 ## Installation
 
