@@ -8,8 +8,14 @@ pip install -r requirements.txt
 
 using `Kotus_Nadigi_050318.csv` as an example source
 
+The source CSV needs a header:
+
 `cat header.csv Kotus_Nadigi_050318.csv > nimiarkisto.csv`
 
+PHP script for converting the coordinates into WGS84, adds two new columns to source CSV:
+
 `php convert_euref_to_wgs84.php`
+
+csv2rdf:
 
 `python csv_to_rdf.py nimiarkisto_with_wsg84.csv output KOTUS`
