@@ -1,8 +1,11 @@
-output
+# Input files
 nimiarkisto_with_wsg84.csv
-nimiarkisto_with_wsg84_100.csv
 nimiarkisto.csv
 Kotus_Nadigi_050318.csv
+Kotus_Nadigi_270418.csv
+
+# Output files
+output
 
 # Python
 *.py[co]
