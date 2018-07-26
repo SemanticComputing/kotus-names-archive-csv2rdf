@@ -12,6 +12,8 @@ from mapping import KOTUS_MAPPING
 from namespaces import *
 import csv
 from pathlib import Path
+from finnsyll import FinnSyll
+f = FinnSyll()
 
 class RDFMapper:
     """
@@ -35,11 +37,12 @@ class RDFMapper:
         """
         Map a single row to RDF.
 
-        :param entity_uri: URI of the instance being created
         :param row: tabular data
         :return:
         """
         row_rdf = Graph()
+
+        # URI of the instance being created
         entity_uri = DATA_NS[str(row['RerSer'])]
 
         # Loop through the mapping dict and convert the row to RDF
@@ -67,6 +70,16 @@ class RDFMapper:
 
             if liter:
                 row_rdf.add((entity_uri, mapping['uri'], liter))
+
+            # Use FinnSyll to split place name into modifier and basic element if possible
+            if column_name == 'Paikannimi':
+                splitted = f.split(value)
+                if '=' in splitted:
+                    lastIndex = splitted.rindex('=')+1
+                    modifier = splitted[:lastIndex].replace('=', '')  # määriteosa
+                    basic_element = splitted[lastIndex:] # perusosa
+                    row_rdf.add((entity_uri, SCHEMA_NS['place_name_modifier'], Literal(modifier, lang='fi')))
+                    row_rdf.add((entity_uri, SCHEMA_NS['place_name_basic_element'], Literal(basic_element, lang='fi')))
 
             if row_rdf:
                 row_rdf.add((entity_uri, RDF.type, self.instance_class))
