@@ -13,6 +13,8 @@ from namespaces import *
 import csv
 from pathlib import Path
 from finnsyll import FinnSyll
+import numpy as np
+from decimal import *
 f = FinnSyll()
 
 class RDFMapper:
@@ -40,14 +42,15 @@ class RDFMapper:
         :param row: tabular data
         :return:
         """
+
         row_rdf = Graph()
         kotus_id = row['RerSer']
 
-        if str(kotus_id) == '':
+        if kotus_id == '':
             return row_rdf
         else:
             # URI of the instance being created
-            entity_uri = DATA_NS[str(int(kotus_id))]
+            entity_uri = DATA_NS[kotus_id]
 
         # Loop through the mapping dict and convert the row to RDF
         for column_name in self.mapping:
@@ -59,37 +62,38 @@ class RDFMapper:
 
             liter = None
 
-            #if column_name == 'Vuosi' and value != '':
-            #    liter = Literal(value, datatype=XSD.int)
-            if column_name == 'wgs84_lat':
-                if value is not None:
-                    liter = Literal(value, datatype=XSD.float)
-            elif column_name == 'wgs84_long':
-                if value is not None:
-                    liter = Literal(value, datatype=XSD.float)
+            if column_name == 'wgs84_lat' or column_name == 'wgs84_long':
+                if value != '-1':
+                    getcontext().prec = 12
+                    value = Decimal(value)
+                    #print(value)
+                    #print(type(value))
+                    liter = Literal(value)
             elif column_name == 'Paikanlaji':
                 liter = Literal(value, lang='fi')
-            else:
+            elif value is not None:
                 liter = Literal(value)
 
             if liter:
                 row_rdf.add((entity_uri, mapping['uri'], liter))
 
-            # Use FinnSyll to split place name into modifier and basic element if possible
+            # extra triples:
             if column_name == 'Paikannimi':
-                splitted = f.split(value)
-                if '=' in splitted:
-                    lastIndex = splitted.rindex('=')+1
-                    modifier = splitted[:lastIndex].replace('=', '')  # määriteosa
-                    basic_element = splitted[lastIndex:] # perusosa
-                    row_rdf.add((entity_uri, SCHEMA_NS['place_name_modifier'], Literal(modifier)))
-                    row_rdf.add((entity_uri, SCHEMA_NS['place_name_basic_element'], Literal(basic_element)))
+                 # Use FinnSyll to split place name into modifier and basic element if possible
+                 splitted = f.split(value)
+                 if '=' in splitted:
+                     lastIndex = splitted.rindex('=')+1
+                     modifier = splitted[:lastIndex].replace('=', '')  # määriteosa
+                     basic_element = splitted[lastIndex:] # perusosa
+                     row_rdf.add((entity_uri, SCHEMA_NS['place_name_modifier'], Literal(modifier)))
+                     row_rdf.add((entity_uri, SCHEMA_NS['place_name_basic_element'], Literal(basic_element)))
+        # end column loop
 
-            if row_rdf:
-                row_rdf.add((entity_uri, RDF.type, self.instance_class))
-            else:
-                # Don't create class instance if there is no data about it
-                self.log.warning('No data found for {uri}'.format(uri=entity_uri))
+        if row_rdf:
+            row_rdf.add((entity_uri, RDF.type, self.instance_class))
+        else:
+            # Don't create class instance if there is no data about it
+            self.log.warning('No data found for {uri}'.format(uri=entity_uri))
 
         return row_rdf
 
@@ -100,11 +104,27 @@ class RDFMapper:
 
         :param csv_input: CSV input (filename or buffer)
         """
-        dtypes = {'RerSer': 'float'}
+        # https://stackoverflow.com/a/45063514
+        dtypes = {
+            'Kartan numero': 'U',
+            'Kerääjän karttanumero': 'U',
+            'RerSer': 'U',
+            'Vuosi': 'U',
+            'Aakkonen': 'U',
+            'Kuvatiedosto': 'U',
+            'Muut nimet': 'U',
+            'Todellinen pitäjä': 'U',
+            'HuomioKotus': 'U',
+            'Kuvalinkki': 'U',
+            'KarttaID': 'U',
+            'wgs84_lat': 'U',
+            'wgs84_long': 'U',
+        }
         csv_data = pd.read_csv(csv_input, encoding='UTF-8', sep=',', na_values=[''], dtype=dtypes)
 
         self.table = csv_data.fillna('').applymap(lambda x: x.strip() if type(x) == str else x)
         self.log.info('Data read from CSV %s' % csv_input)
+        print('Data read from CSV %s' % csv_input)
 
 
     def serialize(self, destination_data, destination_schema):
@@ -131,6 +151,7 @@ class RDFMapper:
         Loop through CSV rows and convert them to RDF
         """
 
+        print('Looping through CSV rows and converting them to RDF')
         for index in range(len(self.table)):
             row_rdf = self.map_row_to_rdf(self.table.ix[index])
             if row_rdf:

@@ -5,7 +5,7 @@ Mapping of CSV columns to RDF properties
 """
 
 from namespaces import *
-from converters import convert_int, validate_wgs84_lat, validate_wgs84_long
+from converters import convert_int
 
 KOTUS_MAPPING = {
     'Paikannimi':
@@ -106,12 +106,10 @@ KOTUS_MAPPING = {
     'wgs84_lat':
         {
             'uri': WGS84['lat'],
-            'converter': validate_wgs84_lat
         },
     'wgs84_long':
         {
             'uri': WGS84['long'],
-            'converter': validate_wgs84_long
         },
     'Kokoelma':
         {
