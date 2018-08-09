@@ -41,9 +41,13 @@ class RDFMapper:
         :return:
         """
         row_rdf = Graph()
+        kotus_id = row['RerSer']
 
-        # URI of the instance being created
-        entity_uri = DATA_NS[str(row['RerSer'])]
+        if str(kotus_id) == '':
+            return row_rdf
+        else:
+            # URI of the instance being created
+            entity_uri = DATA_NS[str(int(kotus_id))]
 
         # Loop through the mapping dict and convert the row to RDF
         for column_name in self.mapping:
@@ -55,9 +59,9 @@ class RDFMapper:
 
             liter = None
 
-            if column_name == 'Vuosi' and value != '':
-                liter = Literal(value, datatype=XSD.int)
-            elif column_name == 'wgs84_lat':
+            #if column_name == 'Vuosi' and value != '':
+            #    liter = Literal(value, datatype=XSD.int)
+            if column_name == 'wgs84_lat':
                 if value is not None:
                     liter = Literal(value, datatype=XSD.float)
             elif column_name == 'wgs84_long':
@@ -78,8 +82,8 @@ class RDFMapper:
                     lastIndex = splitted.rindex('=')+1
                     modifier = splitted[:lastIndex].replace('=', '')  # määriteosa
                     basic_element = splitted[lastIndex:] # perusosa
-                    row_rdf.add((entity_uri, SCHEMA_NS['place_name_modifier'], Literal(modifier, lang='fi')))
-                    row_rdf.add((entity_uri, SCHEMA_NS['place_name_basic_element'], Literal(basic_element, lang='fi')))
+                    row_rdf.add((entity_uri, SCHEMA_NS['place_name_modifier'], Literal(modifier)))
+                    row_rdf.add((entity_uri, SCHEMA_NS['place_name_basic_element'], Literal(basic_element)))
 
             if row_rdf:
                 row_rdf.add((entity_uri, RDF.type, self.instance_class))
@@ -96,7 +100,8 @@ class RDFMapper:
 
         :param csv_input: CSV input (filename or buffer)
         """
-        csv_data = pd.read_csv(csv_input, encoding='UTF-8', sep=',', na_values=[''])
+        dtypes = {'RerSer': 'float'}
+        csv_data = pd.read_csv(csv_input, encoding='UTF-8', sep=',', na_values=[''], dtype=dtypes)
 
         self.table = csv_data.fillna('').applymap(lambda x: x.strip() if type(x) == str else x)
         self.log.info('Data read from CSV %s' % csv_input)
