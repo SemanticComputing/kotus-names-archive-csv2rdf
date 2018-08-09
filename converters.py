@@ -82,13 +82,13 @@ def validate_wgs84_lat(raw_value):
 
     # +-1 means that a coordinate is missing
     if raw_value == -1.0 or raw_value == 1:
-        log.warning('Invalid value for wgs84 lat coordinate: %s' % raw_value)
+        #log.warning('Invalid value for wgs84 lat coordinate: %s' % raw_value)
         return None
 
     if raw_value >= -90.0 and raw_value <= 90.0:
         return raw_value
     else:
-        log.warning('Invalid value for wgs84 lat coordinate: %s' % raw_value)
+        #log.warning('Invalid value for wgs84 lat coordinate: %s' % raw_value)
         return None
 
 def validate_wgs84_long(raw_value: str):
