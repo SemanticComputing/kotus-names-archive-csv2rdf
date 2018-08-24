@@ -16,6 +16,7 @@ from finnsyll import FinnSyll
 import numpy as np
 from decimal import *
 f = FinnSyll()
+from joblib import load
 
 class RDFMapper:
     """
@@ -34,6 +35,7 @@ class RDFMapper:
                             format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
         self.log = logging.getLogger(__name__)
+        self.kotus_place_types = load('kotus_place_types.bin')
 
     def map_row_to_rdf(self, row):
         """
@@ -70,7 +72,14 @@ class RDFMapper:
                     #print(type(value))
                     liter = Literal(value)
             elif column_name == 'Paikanlaji':
-                liter = Literal(value, lang='fi')
+                if value in self.kotus_place_types:
+                    kotus_id = self.kotus_place_types[value]
+                    liter = URIRef('http://ldf.fi/schema/place-type/kotus/' + str(kotus_id))
+                else:
+                    if value != '':
+                        print('not linked: ' + value)
+                    liter = Literal(value, lang='fi')
+
             elif value is not None:
                 liter = Literal(value)
 
