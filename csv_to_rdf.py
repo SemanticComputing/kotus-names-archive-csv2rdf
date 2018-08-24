@@ -36,6 +36,18 @@ class RDFMapper:
 
         self.log = logging.getLogger(__name__)
         self.kotus_place_types = load('kotus_place_types.bin')
+        self.unhandled_place_types = {}
+        self.not_linked = {}
+        self.read_unhandled_csv()
+
+
+    def read_unhandled_csv(self):
+        csv_data = pd.read_csv('2. Kotus-paikanlajit - Sheet1.csv', encoding='UTF-8', sep=',', na_values=[''], dtype={'paikanlaji': 'U'})
+        for index in range(len(csv_data)):
+            row = csv_data.ix[index]
+            place_type = str(row['paikanlaji']).lower()
+            if place_type not in self.unhandled_place_types:
+                self.unhandled_place_types[place_type] = 'u'
 
     def map_row_to_rdf(self, row):
         """
@@ -72,12 +84,18 @@ class RDFMapper:
                     #print(type(value))
                     liter = Literal(value)
             elif column_name == 'Paikanlaji':
+                value = value.lower()
                 if value in self.kotus_place_types:
                     kotus_id = self.kotus_place_types[value]
                     liter = URIRef('http://ldf.fi/schema/place-type/kotus/' + str(kotus_id))
                 else:
                     if value != '':
-                        print('not linked: ' + value)
+                        if value not in self.not_linked:
+                            self.not_linked[value] = 'not'
+                            if value not in self.unhandled_place_types:
+                                print('handled, but not linked: ' + value)
+                            # else:
+                            #     print('unhandled, so not linked: ' + value)
                     liter = Literal(value, lang='fi')
 
             elif value is not None:
