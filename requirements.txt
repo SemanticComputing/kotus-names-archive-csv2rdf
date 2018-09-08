@@ -6,3 +6,4 @@ pyprind
 responses
 python-slugify>=1.2.1
 FinnSyll
+joblib

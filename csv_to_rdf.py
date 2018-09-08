@@ -35,14 +35,14 @@ class RDFMapper:
                             format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
         self.log = logging.getLogger(__name__)
-        self.kotus_place_types = load('kotus_place_types.bin')
+        self.kotus_place_types = load('output/na_place_types_for_linking.bin')
         self.unhandled_place_types = {}
         self.not_linked = {}
         self.read_unhandled_csv()
 
 
     def read_unhandled_csv(self):
-        csv_data = pd.read_csv('2. Kotus-paikanlajit - Sheet1.csv', encoding='UTF-8', sep=',', na_values=[''], dtype={'paikanlaji': 'U'})
+        csv_data = pd.read_csv('source_data/2. Kotus-paikanlajit - Sheet1.csv', encoding='UTF-8', sep=',', na_values=[''], dtype={'paikanlaji': 'U'})
         for index in range(len(csv_data)):
             row = csv_data.ix[index]
             place_type = str(row['paikanlaji']).lower()
@@ -64,7 +64,7 @@ class RDFMapper:
             return row_rdf
         else:
             # URI of the instance being created
-            entity_uri = DATA_NS[kotus_id]
+            entity_uri = NA_NS[kotus_id]
 
         # Loop through the mapping dict and convert the row to RDF
         for column_name in self.mapping:
@@ -87,7 +87,7 @@ class RDFMapper:
                 value = value.lower()
                 if value in self.kotus_place_types:
                     kotus_id = self.kotus_place_types[value]
-                    liter = URIRef('http://ldf.fi/schema/place-type/kotus/' + str(kotus_id))
+                    liter = URIRef('http://ldf.fi/schema/kotus/place_type_' + str(kotus_id))
                 else:
                     if value != '':
                         if value not in self.not_linked:
