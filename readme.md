@@ -16,6 +16,6 @@ PHP script for converting the coordinates into WGS84, adds two new columns to so
 
 `php convert_euref_to_wgs84.php`
 
-csv2rdf:
+Create place type ontology and convert the Names Archive CSV dump into RDF:
 
-`python csv_to_rdf.py nimiarkisto_with_wsg84.csv output KOTUS`
+`python csv_to_rdf.py`
