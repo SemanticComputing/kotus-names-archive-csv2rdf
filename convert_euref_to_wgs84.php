@@ -17,7 +17,7 @@
 include("koord_proj.php");
 
 $rows = array();
-$file_name = "nimiarkisto.csv";
+$file_name = "./source_data/Kotus_nadigi_testi_270418_first_2000_lines_with_header.csv";
 
 if (($handle = fopen($file_name, "r")) !== FALSE) {
     $first = True;
@@ -39,7 +39,7 @@ if (($handle = fopen($file_name, "r")) !== FALSE) {
     fclose($handle);
 }
 
-$fp = fopen('nimiarkisto_with_wsg84.csv', 'w');
+$fp = fopen('./source_data/Kotus_nadigi_testi_270418_first_2000_lines_with_header_with_WGS84.csv', 'w');
 
 foreach ($rows as $row) {
     fputcsv($fp, $row);
