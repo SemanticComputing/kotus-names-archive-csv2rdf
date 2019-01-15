@@ -49,7 +49,7 @@ class RDFMapper:
 
 
     def read_unhandled_csv(self):
-        csv_data = pd.read_csv('source_data/2. Kotus-paikanlajit - Sheet1.csv', encoding='UTF-8', sep=',', na_values=[''], dtype={'paikanlaji': 'U'})
+        csv_data = pd.read_csv('source_data/2-Kotus-paikanlajit - Sheet1.csv', encoding='UTF-8', sep=',', na_values=[''], dtype={'paikanlaji': 'U'})
         for index in range(len(csv_data)):
             row = csv_data.iloc[index]
             place_type = str(row['paikanlaji']).lower()
@@ -101,8 +101,8 @@ class RDFMapper:
                             self.not_linked[value] = 'not'
                             if value not in self.unhandled_place_types:
                                 print('handled, but not linked: ' + value)
-                            # else:
-                            #     print('unhandled, so not linked: ' + value)
+                            else:
+                                 print('unhandled, so not linked: ' + value)
                     liter = Literal(value, lang='fi')
 
             elif value is not None:
@@ -192,7 +192,7 @@ class RDFMapper:
     def create_kotus_classes(self, row, pnr_class):
         kotus_rdf = Graph()
         col_no = 1
-        while row['Kotus_' + str(col_no)]:
+        while row['Kotus_' + str(col_no)] != '':
              entity_uri = NA_SCHEMA_NS['place_type_' + str(self.kotus_id)]
              kotus_rdf.add((entity_uri, RDF.type, self.instance_class))
              kotus_rdf.add((entity_uri, RDFS['subClassOf'], pnr_class))
@@ -212,9 +212,11 @@ class RDFMapper:
                  self.kotus_place_types[prefLabel] = self.kotus_id
              col_no += 1
              self.kotus_id += 1
-        for x in range(1,15):
-            if row['Kotus_' + str(col_no + x)] != '':
-                print(row['Kotus_' + str(col_no + 1)])
+        #print('last column:')
+        #print(row['Kotus_' + str(col_no - 1)])     
+        #for x in range(1,15):
+        #    if row['Kotus_' + str(col_no + x)] != '':
+        #        print(row['Kotus_' + str(col_no + 1)])
         self.data += kotus_rdf
 
 
@@ -339,7 +341,7 @@ if __name__ == "__main__":
 
     # First create mapping from Names Archive place types to Place Name Register place types
     mapper = RDFMapper(None, RDFS['Class'], 'place_types', loglevel=args.loglevel.upper())
-    mapper.place_types_read_csv('source_data/PNR_Kotus-paikanlajit.csv')
+    mapper.place_types_read_csv('source_data/1-PNR-Kotus-paikanlajit - Sheet1.csv')
     mapper.place_types_process_rows()
     mapper.place_types_serialize(output_dir)
 
