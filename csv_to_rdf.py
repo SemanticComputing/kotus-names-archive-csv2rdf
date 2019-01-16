@@ -35,26 +35,17 @@ class RDFMapper:
                             format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
         self.log = logging.getLogger(__name__)
-        if mode == 'place_types':
+        if mode == 'create_place_types':
+            self.place_types_not_linked_to_pnr = {}
+            self.kotus_place_types = {}
             self.latest_theme = None
             self.latest_group = None
             self.latest_subgroup = None
             self.kotus_id = 1
-            self.kotus_place_types = {}
-        if mode == 'places':
-            self.kotus_place_types = load('output/na_place_types_for_linking.bin')
-            self.unhandled_place_types = {}
-            self.not_linked = {}
-            self.read_unhandled_csv()
 
-
-    def read_unhandled_csv(self):
-        csv_data = pd.read_csv('source_data/2-Kotus-paikanlajit - Sheet1.csv', encoding='UTF-8', sep=',', na_values=[''], dtype={'paikanlaji': 'U'})
-        for index in range(len(csv_data)):
-            row = csv_data.iloc[index]
-            place_type = str(row['paikanlaji']).lower()
-            if place_type not in self.unhandled_place_types:
-                self.unhandled_place_types[place_type] = 'u'
+        if mode == 'create_places':
+            self.kotus_place_types = load('output/kotus_place_types_temp.bin')
+            self.place_types_not_linked_to_pnr = load('output/place_types_not_linked_to_pnr_temp.bin')
 
     def places_map_row_to_rdf(self, row):
         """
@@ -87,24 +78,18 @@ class RDFMapper:
                 if value != '-1':
                     getcontext().prec = 12
                     value = Decimal(value)
-                    #print(value)
-                    #print(type(value))
                     liter = Literal(value)
-            elif column_name == 'Paikanlaji':
+            elif column_name == 'Paikanlaji' and value != '':
                 value = value.lower()
                 if value in self.kotus_place_types:
+                    #print('{value} found in PNR-Kotus mapping'.format(value=value))
                     kotus_id = self.kotus_place_types[value]
-                    liter = URIRef('http://ldf.fi/schema/kotus/place_type_' + str(kotus_id))
+                    liter = NA_SCHEMA_NS['place_type_' + str(kotus_id)]
+                elif value in self.place_types_not_linked_to_pnr:
+                    #print('{value} found in Kotus unclassified list'.format(value=value))
+                    liter = NA_SCHEMA_NS['place_type_' + self.place_types_not_linked_to_pnr[value]]
                 else:
-                    if value != '':
-                        if value not in self.not_linked:
-                            self.not_linked[value] = 'not'
-                            if value not in self.unhandled_place_types:
-                                print('handled, but not linked: ' + value)
-                            else:
-                                 print('unhandled, so not linked: ' + value)
-                    liter = Literal(value, lang='fi')
-
+                    print('{value} not found in mapping lists'.format(value=value))
             elif value is not None:
                 liter = Literal(value)
 
@@ -213,12 +198,12 @@ class RDFMapper:
              col_no += 1
              self.kotus_id += 1
         #print('last column:')
-        #print(row['Kotus_' + str(col_no - 1)])     
-        #for x in range(1,15):
-        #    if row['Kotus_' + str(col_no + x)] != '':
-        #        print(row['Kotus_' + str(col_no + 1)])
+        #print(row['Kotus_' + str(col_no - 1)])
+        for x in range(1,15):
+            col = col_no + x
+            if  col < 1366 and row['Kotus_' + str(col)] != '':
+               print(row['Kotus_' + str(col_no + 1)])
         self.data += kotus_rdf
-
 
     def read_csv(self, csv_input):
         """
@@ -246,7 +231,7 @@ class RDFMapper:
 
         self.table = csv_data.fillna('').applymap(lambda x: x.strip() if type(x) == str else x)
         self.log.info('Data read from CSV %s' % csv_input)
-        print('Data read from CSV %s' % csv_input)
+        #print('Data read from CSV %s' % csv_input)
 
     def place_types_read_csv(self, csv_input):
         """
@@ -255,10 +240,46 @@ class RDFMapper:
         :param csv_input: CSV input (filename or buffer)
         """
         csv_data = pd.read_csv(csv_input, encoding='UTF-8', sep=',', na_values=[''])
-
         self.table = csv_data.fillna('').applymap(lambda x: x.strip() if type(x) == str else x)
         self.log.info('Data read from CSV %s' % csv_input)
-        print('Data read from CSV %s' % csv_input)
+
+    def place_types_read_and_process_unclassified_csv(self):
+        csv_data = pd.read_csv('source_data/2-Kotus-paikanlajit - Sheet1.csv', encoding='UTF-8', sep=',', na_values=[''], dtype={'paikanlaji': 'U'})
+        kotus_unclassified_rdf = Graph()
+
+        # create custon classes for place types that could not be classified
+        entity_uri = NA_SCHEMA_NS['place_type_unclassified']
+        kotus_unclassified_rdf.add((entity_uri, RDF.type, self.instance_class))
+        kotus_unclassified_rdf.add((entity_uri, SKOS.prefLabel, Literal('Luokittelematon', lang='fi')))
+        kotus_unclassified_rdf.add((entity_uri, SKOS.prefLabel, Literal('Unclassified', lang='en')))
+
+        entity_uri = NA_SCHEMA_NS['place_type_multiclass']
+        kotus_unclassified_rdf.add((entity_uri, RDF.type, self.instance_class))
+        kotus_unclassified_rdf.add((entity_uri, SKOS.prefLabel, Literal('Monta paikkatyyppiä', lang='fi')))
+        kotus_unclassified_rdf.add((entity_uri, SKOS.prefLabel, Literal('Multiple place types', lang='en')))
+
+        entity_uri = NA_SCHEMA_NS['place_type_swedish']
+        kotus_unclassified_rdf.add((entity_uri, RDF.type, self.instance_class))
+        kotus_unclassified_rdf.add((entity_uri, SKOS.prefLabel, Literal('Ruotsinkielinen paikkatyyppi', lang='fi')))
+        kotus_unclassified_rdf.add((entity_uri, SKOS.prefLabel, Literal('Swedish place type', lang='en')))
+
+        self.data += kotus_unclassified_rdf
+
+        for index in range(len(csv_data)):
+            row = csv_data.iloc[index]
+            place_type = str(row['paikanlaji'])
+            if place_type not in self.place_types_not_linked_to_pnr:
+                if place_type.startswith('LUOKITTELEMATON'):
+                    place_type = place_type.split('LUOKITTELEMATON ')[1]
+                    self.place_types_not_linked_to_pnr[place_type] = 'unclassified'
+
+                if place_type.startswith('MONTA PAIKKATYYPPIÄ'):
+                    place_type = place_type.split('MONTA PAIKKATYYPPIÄ ')[1]
+                    self.place_types_not_linked_to_pnr[place_type] = 'multiclass'
+                if place_type.startswith('RUOTS'):
+                    place_type = place_type.split('RUOTS ')[1]
+                    self.place_types_not_linked_to_pnr[place_type] = 'swedish'
+
 
     def serialize(self, destination_data, destination_schema):
         """
@@ -270,6 +291,7 @@ class RDFMapper:
         :return: output from rdflib.Graph.serialize
         """
         bind_namespaces(self.data)
+        bind_namespaces(self.schema)
 
         data = self.data.serialize(format="turtle", destination=destination_data)
         schema = self.schema.serialize(format="turtle", destination=destination_schema)
@@ -288,11 +310,12 @@ class RDFMapper:
         :return: output from rdflib.Graph.serialize
         """
         bind_namespaces(self.data)
-        ttl_destination = output_dir + "pnr-na-place-types.ttl"
+        ttl_destination = output_dir + "kotus-names-archive-placetypes.ttl"
         data = self.data.serialize(format="turtle", destination=ttl_destination)
         self.log.info('Data serialized to %s' % output_dir)
 
-        dump(self.kotus_place_types, output_dir + 'na_place_types_for_linking.bin')
+        dump(self.kotus_place_types, output_dir + 'kotus_place_types_temp.bin')
+        dump(self.place_types_not_linked_to_pnr, output_dir + 'place_types_not_linked_to_pnr_temp.bin')
         # return data  # Return for testing purposes
 
     def places_process_rows(self):
@@ -327,9 +350,6 @@ class RDFMapper:
             if row_rdf:
                 self.data += row_rdf
 
-
-
-
 if __name__ == "__main__":
 
     argparser = argparse.ArgumentParser(description="Process CSV", fromfile_prefix_chars='@')
@@ -340,13 +360,14 @@ if __name__ == "__main__":
     output_dir = 'output/'
 
     # First create mapping from Names Archive place types to Place Name Register place types
-    mapper = RDFMapper(None, RDFS['Class'], 'place_types', loglevel=args.loglevel.upper())
+    mapper = RDFMapper(None, RDFS['Class'], 'create_place_types', loglevel=args.loglevel.upper())
     mapper.place_types_read_csv('source_data/1-PNR-Kotus-paikanlajit - Sheet1.csv')
     mapper.place_types_process_rows()
+    mapper.place_types_read_and_process_unclassified_csv()
     mapper.place_types_serialize(output_dir)
 
     # Then convert the Names Archive CSV dump into RDF
-    mapper = RDFMapper(KOTUS_MAPPING, HIPLA_SCHEMA_NS['Place'], 'places', loglevel=args.loglevel.upper())
+    mapper = RDFMapper(KOTUS_MAPPING, HIPLA_SCHEMA_NS['Place'], 'create_places', loglevel=args.loglevel.upper())
     mapper.read_csv('source_data/Kotus_nadigi_testi_270418_first_2000_lines_with_header_with_WGS84.csv')
     mapper.places_process_rows()
-    mapper.serialize(output_dir + "names-archive.ttl", output_dir + "schema.ttl")
+    mapper.serialize(output_dir + "kotus-names-archive.ttl", output_dir + "kotus-names-archive-schema.ttl")

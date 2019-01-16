@@ -13,7 +13,7 @@ NA_NS = Namespace('http://ldf.fi/kotus-names-archive/')
 
 HIPLA_SCHEMA_NS = Namespace('http://ldf.fi/schema/hipla/')
 PNR_SCHEMA_NS = Namespace('http://ldf.fi/schema/pnr/')
-NA_SCHEMA_NS = Namespace('http://ldf.fi/schema/na/')
+NA_SCHEMA_NS = Namespace('http://ldf.fi/schema/kotus-names-archive/')
 
 def bind_namespaces(graph):
     graph.bind("skos", "http://www.w3.org/2004/02/skos/core#")
@@ -24,4 +24,4 @@ def bind_namespaces(graph):
 
     graph.bind("hipla-schema", "http://ldf.fi/schema/hipla/")
     graph.bind("pnr-schema", "http://ldf.fi/schema/pnr/")
-    graph.bind("na-schema", "http://ldf.fi/schema/na/")
+    graph.bind("na-schema", "http://ldf.fi/schema/kotus-names-archive/")
