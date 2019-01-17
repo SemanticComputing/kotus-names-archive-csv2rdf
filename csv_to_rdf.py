@@ -87,7 +87,7 @@ class RDFMapper:
                     liter = NA_SCHEMA_NS['place_type_' + str(kotus_id)]
                 elif value in self.place_types_not_linked_to_pnr:
                     #print('{value} found in Kotus unclassified list'.format(value=value))
-                    liter = NA_SCHEMA_NS['place_type_' + self.place_types_not_linked_to_pnr[value]]
+                    liter = self.place_types_not_linked_to_pnr[value]
                 else:
                     print('{value} not found in mapping lists'.format(value=value))
             elif value is not None:
@@ -244,42 +244,74 @@ class RDFMapper:
         self.log.info('Data read from CSV %s' % csv_input)
 
     def place_types_read_and_process_unclassified_csv(self):
-        csv_data = pd.read_csv('source_data/2-Kotus-paikanlajit - Sheet1.csv', encoding='UTF-8', sep=',', na_values=[''], dtype={'paikanlaji': 'U'})
+        csv_data = pd.read_csv('source_data/2-Kotus-paikanlajit-ei-PNR-luokkaa - Sheet1.csv', encoding='UTF-8', sep=',', na_values=[''], dtype={'paikanlaji': 'U'})
         kotus_unclassified_rdf = Graph()
 
         # create custon classes for place types that could not be classified
-        entity_uri = NA_SCHEMA_NS['place_type_unclassified']
-        kotus_unclassified_rdf.add((entity_uri, RDF.type, self.instance_class))
-        kotus_unclassified_rdf.add((entity_uri, SKOS.prefLabel, Literal('Luokittelematon', lang='fi')))
-        kotus_unclassified_rdf.add((entity_uri, SKOS.prefLabel, Literal('Unclassified', lang='en')))
 
-        entity_uri = NA_SCHEMA_NS['place_type_multiclass']
-        kotus_unclassified_rdf.add((entity_uri, RDF.type, self.instance_class))
-        kotus_unclassified_rdf.add((entity_uri, SKOS.prefLabel, Literal('Monta paikkatyyppiä', lang='fi')))
-        kotus_unclassified_rdf.add((entity_uri, SKOS.prefLabel, Literal('Multiple place types', lang='en')))
+        appellative_uri = NA_SCHEMA_NS['place_type_appellative']
+        kotus_unclassified_rdf.add((appellative_uri, RDF.type, self.instance_class))
+        kotus_unclassified_rdf.add((appellative_uri, SKOS.prefLabel, Literal('Appellatiivi', lang='fi')))
 
-        entity_uri = NA_SCHEMA_NS['place_type_swedish']
-        kotus_unclassified_rdf.add((entity_uri, RDF.type, self.instance_class))
-        kotus_unclassified_rdf.add((entity_uri, SKOS.prefLabel, Literal('Ruotsinkielinen paikkatyyppi', lang='fi')))
-        kotus_unclassified_rdf.add((entity_uri, SKOS.prefLabel, Literal('Swedish place type', lang='en')))
+        person_name_uri = NA_SCHEMA_NS['place_type_person_name']
+        kotus_unclassified_rdf.add((person_name_uri, RDF.type, self.instance_class))
+        kotus_unclassified_rdf.add((person_name_uri, SKOS.prefLabel, Literal('Henkilönimi', lang='fi')))
 
-        self.data += kotus_unclassified_rdf
+        other_name_uri = NA_SCHEMA_NS['place_type_other_name']
+        kotus_unclassified_rdf.add((other_name_uri, RDF.type, self.instance_class))
+        kotus_unclassified_rdf.add((other_name_uri, SKOS.prefLabel, Literal('Muu nimi', lang='fi')))
+
+        unclassified_uri = NA_SCHEMA_NS['place_type_unclassified']
+        kotus_unclassified_rdf.add((unclassified_uri, RDF.type, self.instance_class))
+        kotus_unclassified_rdf.add((unclassified_uri, SKOS.prefLabel, Literal('Luokittelematon', lang='fi')))
+
+        multiclass_uri = NA_SCHEMA_NS['place_type_multiclass']
+        kotus_unclassified_rdf.add((multiclass_uri, RDF.type, self.instance_class))
+        kotus_unclassified_rdf.add((multiclass_uri, SKOS.prefLabel, Literal('Monta paikkatyyppiä', lang='fi')))
+
+        swedish_uri = NA_SCHEMA_NS['place_type_swedish']
+        kotus_unclassified_rdf.add((swedish_uri, RDF.type, self.instance_class))
+        kotus_unclassified_rdf.add((swedish_uri, SKOS.prefLabel, Literal('Ruotsinkielinen paikkatyyppi', lang='fi')))
 
         for index in range(len(csv_data)):
             row = csv_data.iloc[index]
-            place_type = str(row['paikanlaji'])
+            place_type = str(row['paikanlaji']).lower()
             if place_type not in self.place_types_not_linked_to_pnr:
-                if place_type.startswith('LUOKITTELEMATON'):
-                    place_type = place_type.split('LUOKITTELEMATON ')[1]
-                    self.place_types_not_linked_to_pnr[place_type] = 'unclassified'
+                if place_type.startswith('appellatiivi'):
+                    place_type = place_type.split('appellatiivi ')[1]
+                    self.place_types_not_linked_to_pnr[place_type] = appellative_uri
+                elif place_type.startswith('henkilönimi'):
+                    place_type = place_type.split('henkilönimi ')[1]
+                    self.place_types_not_linked_to_pnr[place_type] = person_name_uri
+                elif place_type.startswith('muut nimet'):
+                    place_type = place_type.split('muut nimet ')[1]
+                    self.place_types_not_linked_to_pnr[place_type] = other_name_uri
+                elif place_type.startswith('luokittelematon'):
+                    place_type = place_type.split('luokittelematon ')[1]
+                    place_type_uri = NA_SCHEMA_NS['place_type_' + str(self.kotus_id)]
+                    kotus_unclassified_rdf.add((place_type_uri, RDF.type, self.instance_class))
+                    kotus_unclassified_rdf.add((place_type_uri, SKOS['prefLabel'], Literal(place_type, lang='fi')))
+                    kotus_unclassified_rdf.add((place_type_uri, RDFS['subClassOf'], unclassified_uri))
+                    self.place_types_not_linked_to_pnr[place_type] = place_type_uri
+                    self.kotus_id += 1
+                elif place_type.startswith('monta paikkatyyppiä'):
+                    place_type = place_type.split('monta paikkatyyppiä ')[1]
+                    place_type_uri = NA_SCHEMA_NS['place_type_' + str(self.kotus_id)]
+                    kotus_unclassified_rdf.add((place_type_uri, RDF.type, self.instance_class))
+                    kotus_unclassified_rdf.add((place_type_uri, SKOS['prefLabel'], Literal(place_type, lang='fi')))
+                    kotus_unclassified_rdf.add((place_type_uri, RDFS['subClassOf'], multiclass_uri))
+                    self.place_types_not_linked_to_pnr[place_type] = place_type_uri
+                    self.kotus_id += 1
+                elif place_type.startswith('ruots'):
+                    place_type = place_type.split('ruots ')[1]
+                    place_type_uri = NA_SCHEMA_NS['place_type_' + str(self.kotus_id)]
+                    kotus_unclassified_rdf.add((place_type_uri, RDF.type, self.instance_class))
+                    kotus_unclassified_rdf.add((place_type_uri, SKOS['prefLabel'], Literal(place_type, lang='fi')))
+                    kotus_unclassified_rdf.add((place_type_uri, RDFS['subClassOf'], swedish_uri))
+                    self.place_types_not_linked_to_pnr[place_type] = place_type_uri
+                    self.kotus_id += 1
 
-                if place_type.startswith('MONTA PAIKKATYYPPIÄ'):
-                    place_type = place_type.split('MONTA PAIKKATYYPPIÄ ')[1]
-                    self.place_types_not_linked_to_pnr[place_type] = 'multiclass'
-                if place_type.startswith('RUOTS'):
-                    place_type = place_type.split('RUOTS ')[1]
-                    self.place_types_not_linked_to_pnr[place_type] = 'swedish'
-
+        self.data += kotus_unclassified_rdf
 
     def serialize(self, destination_data, destination_schema):
         """
