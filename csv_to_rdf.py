@@ -392,14 +392,20 @@ if __name__ == "__main__":
     output_dir = 'output/'
 
     # First create mapping from Names Archive place types to Place Name Register place types
+    place_types_input = 'source_data/1-PNR-Kotus-paikanlajit - Sheet1.csv'
     mapper = RDFMapper(None, RDFS['Class'], 'create_place_types', loglevel=args.loglevel.upper())
-    mapper.place_types_read_csv('source_data/1-PNR-Kotus-paikanlajit - Sheet1.csv')
+    mapper.place_types_read_csv(place_types_input)
+    print('Data read from CSV %s' % place_types_input)
     mapper.place_types_process_rows()
     mapper.place_types_read_and_process_unclassified_csv()
     mapper.place_types_serialize(output_dir)
+    print('Place types serialized to %s' % output_dir)
 
     # Then convert the Names Archive CSV dump into RDF
+    places_input = 'source_data/Kotus_nadigi_testi_270418_with_header_with_WGS84.csv'
     mapper = RDFMapper(KOTUS_MAPPING, HIPLA_SCHEMA_NS['Place'], 'create_places', loglevel=args.loglevel.upper())
-    mapper.read_csv('source_data/Kotus_nadigi_testi_270418_first_2000_lines_with_header_with_WGS84.csv')
+    mapper.read_csv(places_input)
+    print('Data read from CSV %s' % places_input)
     mapper.places_process_rows()
     mapper.serialize(output_dir + "kotus-names-archive.ttl", output_dir + "kotus-names-archive-schema.ttl")
+    print('Names archive data and schema serialized to %s' % output_dir)

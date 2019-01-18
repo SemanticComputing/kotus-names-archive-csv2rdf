@@ -6,11 +6,11 @@ pip install -r requirements.txt
 
 ## Conversion process
 
-using `Kotus_Nadigi_050318.csv` as an example source
+Using the latest CSV dump `Kotus_nadigi_testi_270418.csv` as an example source
 
 The source CSV needs a header:
 
-`cat header.csv Kotus_Nadigi_050318.csv > nimiarkisto.csv`
+`cat Kotus_nadigi_header.csv Kotus_nadigi_testi_270418.csv > Kotus_nadigi_testi_270418_with_header.csv`
 
 PHP script for converting the coordinates into WGS84, adds two new columns to source CSV:
 
