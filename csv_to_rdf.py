@@ -268,14 +268,17 @@ class RDFMapper:
         unclassified_uri = NA_SCHEMA_NS['place_type_unclassified']
         kotus_unclassified_rdf.add((unclassified_uri, RDF.type, self.instance_class))
         kotus_unclassified_rdf.add((unclassified_uri, SKOS.prefLabel, Literal('Luokittelematon', lang='fi')))
+        kotus_unclassified_rdf.add((unclassified_uri, RDFS.subClassOf, HIPLA_SCHEMA_NS['Place']))
 
         multiclass_uri = NA_SCHEMA_NS['place_type_multiclass']
         kotus_unclassified_rdf.add((multiclass_uri, RDF.type, self.instance_class))
         kotus_unclassified_rdf.add((multiclass_uri, SKOS.prefLabel, Literal('Monta paikkatyyppiä', lang='fi')))
+        kotus_unclassified_rdf.add((multiclass_uri, RDFS.subClassOf, unclassified_uri))
 
         swedish_uri = NA_SCHEMA_NS['place_type_swedish']
         kotus_unclassified_rdf.add((swedish_uri, RDF.type, self.instance_class))
         kotus_unclassified_rdf.add((swedish_uri, SKOS.prefLabel, Literal('Ruotsinkielinen paikkatyyppi', lang='fi')))
+        kotus_unclassified_rdf.add((multiclass_uri, RDFS.subClassOf, unclassified_uri))
 
         for index in range(len(csv_data)):
             row = csv_data.iloc[index]
