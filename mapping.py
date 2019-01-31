@@ -14,9 +14,7 @@ KOTUS_MAPPING = {
         },
     'Paikanlaji':
         {
-            'uri': NA_SCHEMA_NS['type'],
-            'name_fi': 'Paikanlaji',
-            'name_en': 'Place type',
+            'uri': RDF['type'],
         },
     'Kartan numero':
         {

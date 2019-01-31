@@ -58,7 +58,12 @@ class RDFMapper:
         row_rdf = Graph()
         kotus_id = row['RerSer']
 
+        # H = henkilönimi, A = appellatiivi, M = muut nimet (kaatoluokka)
+        skip_place_types = ['h','a','m']
+
         if kotus_id == '':
+            return row_rdf
+        elif row['Paikanlaji'].lower() in skip_place_types:
             return row_rdf
         else:
             # URI of the instance being created
@@ -108,12 +113,6 @@ class RDFMapper:
                      row_rdf.add((entity_uri, NA_SCHEMA_NS['place_name_basic_element'], Literal(basic_element)))
         # end column loop
 
-        if row_rdf:
-            row_rdf.add((entity_uri, RDF.type, self.instance_class))
-        else:
-            # Don't create class instance if there is no data about it
-            self.log.warning('No data found for {uri}'.format(uri=entity_uri))
-
         return row_rdf
 
     def place_types_map_row_to_rdf(self, row):
@@ -125,7 +124,11 @@ class RDFMapper:
         :return:
         """
         row_rdf = Graph()
+        hipla_place_class = HIPLA_SCHEMA_NS['Place']
 
+        row_rdf.add((hipla_place_class, RDF.type, self.instance_class))
+        row_rdf.add((hipla_place_class, SKOS.prefLabel, Literal("Paikka", lang='fi')))
+        row_rdf.add((hipla_place_class, SKOS.prefLabel, Literal("Paikka", lang='en')))
         super_class = None
         desc = None
         #print(row)
@@ -135,6 +138,7 @@ class RDFMapper:
             entity_uri = PNR_SCHEMA_NS['place_type_' + pnr_id]
             label = row['Paikanlajiteema']
             self.latest_theme = entity_uri
+            row_rdf.add((entity_uri, RDFS['subClassOf'], HIPLA_SCHEMA_NS['Place']))
         elif row['Paikanlajiryhmä_id']:
             pnr_id = str(int(row['Paikanlajiryhmä_id']))
             entity_uri = PNR_SCHEMA_NS['place_type_' + pnr_id]
@@ -249,17 +253,17 @@ class RDFMapper:
 
         # create custon classes for place types that could not be classified
 
-        appellative_uri = NA_SCHEMA_NS['place_type_appellative']
-        kotus_unclassified_rdf.add((appellative_uri, RDF.type, self.instance_class))
-        kotus_unclassified_rdf.add((appellative_uri, SKOS.prefLabel, Literal('Appellatiivi', lang='fi')))
+        #appellative_uri = NA_SCHEMA_NS['place_type_appellative']
+        #kotus_unclassified_rdf.add((appellative_uri, RDF.type, self.instance_class))
+        #kotus_unclassified_rdf.add((appellative_uri, SKOS.prefLabel, Literal('Appellatiivi', lang='fi')))
 
-        person_name_uri = NA_SCHEMA_NS['place_type_person_name']
-        kotus_unclassified_rdf.add((person_name_uri, RDF.type, self.instance_class))
-        kotus_unclassified_rdf.add((person_name_uri, SKOS.prefLabel, Literal('Henkilönimi', lang='fi')))
+        #person_name_uri = NA_SCHEMA_NS['place_type_person_name']
+        #kotus_unclassified_rdf.add((person_name_uri, RDF.type, self.instance_class))
+        #kotus_unclassified_rdf.add((person_name_uri, SKOS.prefLabel, Literal('Henkilönimi', lang='fi')))
 
-        other_name_uri = NA_SCHEMA_NS['place_type_other_name']
-        kotus_unclassified_rdf.add((other_name_uri, RDF.type, self.instance_class))
-        kotus_unclassified_rdf.add((other_name_uri, SKOS.prefLabel, Literal('Muu nimi', lang='fi')))
+        #other_name_uri = NA_SCHEMA_NS['place_type_other_name']
+        #kotus_unclassified_rdf.add((other_name_uri, RDF.type, self.instance_class))
+        #kotus_unclassified_rdf.add((other_name_uri, SKOS.prefLabel, Literal('Muu nimi', lang='fi')))
 
         unclassified_uri = NA_SCHEMA_NS['place_type_unclassified']
         kotus_unclassified_rdf.add((unclassified_uri, RDF.type, self.instance_class))
@@ -277,16 +281,16 @@ class RDFMapper:
             row = csv_data.iloc[index]
             place_type = str(row['paikanlaji']).lower()
             if place_type not in self.place_types_not_linked_to_pnr:
-                if place_type.startswith('appellatiivi'):
-                    place_type = place_type.split('appellatiivi ')[1]
-                    self.place_types_not_linked_to_pnr[place_type] = appellative_uri
-                elif place_type.startswith('henkilönimi'):
-                    place_type = place_type.split('henkilönimi ')[1]
-                    self.place_types_not_linked_to_pnr[place_type] = person_name_uri
-                elif place_type.startswith('muut nimet'):
-                    place_type = place_type.split('muut nimet ')[1]
-                    self.place_types_not_linked_to_pnr[place_type] = other_name_uri
-                elif place_type.startswith('luokittelematon'):
+                #if place_type.startswith('appellatiivi'):
+                #    place_type = place_type.split('appellatiivi ')[1]
+                #    self.place_types_not_linked_to_pnr[place_type] = appellative_uri
+                #elif place_type.startswith('henkilönimi'):
+                #    place_type = place_type.split('henkilönimi ')[1]
+                #    self.place_types_not_linked_to_pnr[place_type] = person_name_uri
+                #elif place_type.startswith('muut nimet'):
+                #    place_type = place_type.split('muut nimet ')[1]
+                #    self.place_types_not_linked_to_pnr[place_type] = other_name_uri
+                if place_type.startswith('luokittelematon'):
                     place_type = place_type.split('luokittelematon ')[1]
                     place_type_uri = NA_SCHEMA_NS['place_type_' + str(self.kotus_id)]
                     kotus_unclassified_rdf.add((place_type_uri, RDF.type, self.instance_class))
@@ -402,7 +406,7 @@ if __name__ == "__main__":
     print('Place types serialized to %s' % output_dir)
 
     # Then convert the Names Archive CSV dump into RDF
-    places_input = 'source_data/Kotus_nadigi_testi_270418_with_header_with_WGS84.csv'
+    places_input = 'source_data/Kotus_nadigi_testi_270418_first_2000_lines_with_header_with_WGS84.csv'
     mapper = RDFMapper(KOTUS_MAPPING, HIPLA_SCHEMA_NS['Place'], 'create_places', loglevel=args.loglevel.upper())
     mapper.read_csv(places_input)
     print('Data read from CSV %s' % places_input)
