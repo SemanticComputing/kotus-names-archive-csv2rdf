@@ -28,7 +28,7 @@ if (($handle = fopen($file_name, "r")) !== FALSE) {
 	}
 	else if ($row[0] == "ID" ) {
           array_push($row, "wgs84_long", "wgs84_lat");
-        } else if ( $row[19] == -1 or $row[18] == -1 ) {
+        } else if ( $row[19] == -1 or $row[19] == '' or $row[18] == -1 or row[18] == '' ) {
           array_push($row, -1, -1);
         } else {
           $conversion = koordTG($row[19], $row[18]);
