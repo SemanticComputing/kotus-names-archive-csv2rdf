@@ -406,7 +406,7 @@ if __name__ == "__main__":
     print('Place types serialized to %s' % output_dir)
 
     # Then convert the Names Archive CSV dump into RDF
-    places_input = 'source_data/Kotus_nadigi_testi_270418_first_2000_lines_with_header_with_WGS84.csv'
+    places_input = 'source_data/Kotus_nadigi_testi_270418_with_header_with_WGS84.csv'
     mapper = RDFMapper(KOTUS_MAPPING, HIPLA_SCHEMA_NS['Place'], 'create_places', loglevel=args.loglevel.upper())
     mapper.read_csv(places_input)
     print('Data read from CSV %s' % places_input)
