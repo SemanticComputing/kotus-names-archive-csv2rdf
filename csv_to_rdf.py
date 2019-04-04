@@ -56,18 +56,13 @@ class RDFMapper:
         """
 
         row_rdf = Graph()
-        kotus_id = row['RerSer']
+        mediawiki_id = row['wiki_id']
 
-        # H = henkilönimi, A = appellatiivi, M = muut nimet (kaatoluokka)
-        skip_place_types = ['h','a','m']
-
-        if kotus_id == '':
-            return row_rdf
-        elif row['Paikanlaji'].lower() in skip_place_types:
+        if mediawiki_id == '':
             return row_rdf
         else:
             # URI of the instance being created
-            entity_uri = NA_NS[kotus_id]
+            entity_uri = NA_NS[mediawiki_id]
 
         # Loop through the mapping dict and convert the row to RDF
         for column_name in self.mapping:
@@ -79,12 +74,13 @@ class RDFMapper:
 
             liter = None
 
-            if column_name == 'wgs84_lat' or column_name == 'wgs84_long':
+            if column_name == 'lat' or column_name == 'long':
+                #print(type(value))
                 if value != '-1':
-                    getcontext().prec = 12
                     value = Decimal(value)
+                    value = round(value, 6)
                     liter = Literal(value)
-            elif column_name == 'Paikanlaji' and value != '':
+            if column_name == 'place_type' and value != '':
                 value = value.lower()
                 if value in self.kotus_place_types:
                     #print('{value} found in PNR-Kotus mapping'.format(value=value))
@@ -102,7 +98,7 @@ class RDFMapper:
                 row_rdf.add((entity_uri, mapping['uri'], liter))
 
             # extra triples:
-            if column_name == 'Paikannimi':
+            if column_name == 'place_name':
                  # Use FinnSyll to split place name into modifier and basic element if possible
                  splitted = f.split(value)
                  if '=' in splitted:
@@ -217,19 +213,8 @@ class RDFMapper:
         """
         # https://stackoverflow.com/a/45063514
         dtypes = {
-            'Kartan numero': 'U',
-            'Kerääjän karttanumero': 'U',
-            'RerSer': 'U',
-            'Vuosi': 'U',
-            'Aakkonen': 'U',
-            'Kuvatiedosto': 'U',
-            'Muut nimet': 'U',
-            'Todellinen pitäjä': 'U',
-            'HuomioKotus': 'U',
-            'Kuvalinkki': 'U',
-            'KarttaID': 'U',
-            'wgs84_lat': 'U',
-            'wgs84_long': 'U',
+            'lat': 'U',
+            'long': 'U'
         }
         csv_data = pd.read_csv(csv_input, encoding='UTF-8', sep=',', na_values=[''], dtype=dtypes)
 
@@ -409,7 +394,7 @@ if __name__ == "__main__":
     print('Place types serialized to %s' % output_dir)
 
     # Then convert the Names Archive CSV dump into RDF
-    places_input = 'source_data/Kotus_nadigi_testi_270418_with_header_with_WGS84.csv'
+    places_input = 'source_data/nimiarkisto.fi-CC-BY-4.0_2019-03-29_1000.csv'
     mapper = RDFMapper(KOTUS_MAPPING, HIPLA_SCHEMA_NS['Place'], 'create_places', loglevel=args.loglevel.upper())
     mapper.read_csv(places_input)
     print('Data read from CSV %s' % places_input)
