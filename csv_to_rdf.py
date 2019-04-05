@@ -59,7 +59,7 @@ class RDFMapper:
         mediawiki_id = row['wiki_id']
 
         if mediawiki_id == '':
-            return row_rdf
+            return None
         else:
             # URI of the instance being created
             entity_uri = NA_NS[mediawiki_id]
@@ -71,16 +71,15 @@ class RDFMapper:
             value = row[column_name]
             converter = mapping.get('converter')
             value = converter(value) if converter else value
-
+            if value == '' or value is None:
+                return None
             liter = None
 
-            if column_name == 'lat' or column_name == 'long':
-                #print(type(value))
-                if value != '-1':
-                    value = Decimal(value)
-                    value = round(value, 6)
-                    liter = Literal(value)
-            if column_name == 'place_type' and value != '':
+            if (column_name == 'lat' or column_name == 'long'):
+                value = Decimal(value)
+                value = round(value, 6)
+                liter = Literal(value)
+            elif column_name == 'place_type':
                 value = value.lower()
                 if value in self.kotus_place_types:
                     #print('{value} found in PNR-Kotus mapping'.format(value=value))
@@ -91,7 +90,7 @@ class RDFMapper:
                     liter = self.place_types_not_linked_to_pnr[value]
                 else:
                     print('{value} not found in mapping lists'.format(value=value))
-            elif value is not None:
+            else:
                 liter = Literal(value)
 
             if liter:
@@ -349,7 +348,7 @@ class RDFMapper:
 
         for index in range(len(self.table)):
             row_rdf = self.places_map_row_to_rdf(self.table.iloc[index])
-            if row_rdf:
+            if row_rdf is not None:
                 self.data += row_rdf
 
         # generate schema RDF
@@ -371,7 +370,7 @@ class RDFMapper:
 
         for index in range(len(self.table)):
             row_rdf = self.place_types_map_row_to_rdf(self.table.iloc[index])
-            if row_rdf:
+            if row_rdf is not None:
                 self.data += row_rdf
 
 if __name__ == "__main__":
