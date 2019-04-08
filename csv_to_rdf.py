@@ -62,7 +62,7 @@ class RDFMapper:
             return None
         else:
             # URI of the instance being created
-            entity_uri = NA_NS[mediawiki_id]
+            entity_uri = NA_LDF_NS[mediawiki_id]
 
         # Loop through the mapping dict and convert the row to RDF
         for column_name in self.mapping:
@@ -90,6 +90,8 @@ class RDFMapper:
                     liter = self.place_types_not_linked_to_pnr[value]
                 else:
                     print('{value} not found in mapping lists'.format(value=value))
+            elif column_name == 'wiki_id':
+                liter = NA_NS[value]        
             else:
                 liter = Literal(value)
 

@@ -8,6 +8,9 @@ from namespaces import *
 from converters import convert_int
 
 KOTUS_MAPPING = {
+    'wiki_id': {
+            'uri': OWL['sameAs']
+        },
     'place_name':
         {
             'uri': SKOS.prefLabel
