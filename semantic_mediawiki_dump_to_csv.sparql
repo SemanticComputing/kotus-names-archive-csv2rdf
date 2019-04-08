@@ -1,0 +1,33 @@
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX wikibase: <http://wikiba.se/ontology-beta#>
+PREFIX d: <https://nimiarkisto.fi/prop/direct/>
+
+SELECT ?wiki_id ?kotus_id ?place_name ?place_type ?name_type ?parish ?lat ?long ?precision ?collector ?collection_year ?collection
+{
+  ?wiki_id_ a wikibase:Item ;
+    d:P10053 ?kotus_id ;
+    d:P10015 ?place_name ;
+    d:P10025/skos:prefLabel ?name_type_ ;
+    d:P10013/skos:prefLabel ?parish_ ;    
+    d:P10032/skos:prefLabel ?precision_ ;
+    d:P10017/skos:prefLabel ?collector_ ;
+    d:P10009 ?collection_year_ ;
+    d:P10014/skos:prefLabel ?collection_ .
+  OPTIONAL { ?wiki_id_ d:P10016 ?place_type }
+  OPTIONAL { ?wiki_id_ d:P10012 ?point }	
+  FILTER(lang(?name_type_) = "fi")
+  FILTER(lang(?name_type_) = "fi")
+  FILTER(lang(?precision_) = "fi")
+  FILTER(lang(?parish_) = "fi")
+  FILTER(lang(?collector_) = "fi")
+  FILTER(lang(?collection_) = "fi")
+  BIND(SUBSTR(STR(?wiki_id_), 31) AS ?wiki_id)
+  BIND(STR(?name_type_)  AS ?name_type)
+  BIND(STR(?precision_)  AS ?precision)
+  BIND(STR(?parish_)  AS ?parish)
+  BIND(STR(?collector_)  AS ?collector)
+  BIND(SUBSTR(STRBEFORE(STR(?point), " "), 7)  AS ?long)
+  BIND(STRBEFORE(STRAFTER(STR(?point), " "), ")") AS ?lat)
+  BIND(SUBSTR(STR(?collection_year_), 1, 4)  AS ?collection_year)
+  BIND(STR(?collection_)  AS ?collection)
+}
