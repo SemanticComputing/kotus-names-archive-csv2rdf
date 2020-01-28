@@ -59,7 +59,7 @@ class RDFMapper:
         mediawiki_id = row['wiki_id']
 
         if mediawiki_id == '':
-            return None
+            return None # make sure that each instance has a valid ID
         else:
             # URI of the instance being created
             entity_uri = NA_LDF_NS[mediawiki_id]
@@ -69,10 +69,10 @@ class RDFMapper:
 
             mapping = self.mapping[column_name]
             value = row[column_name]
+            if value == '' or value is None:
+                continue # do not add triples for empty values
             converter = mapping.get('converter')
             value = converter(value) if converter else value
-            if value == '' or value is None:
-                return None
             liter = None
 
             if (column_name == 'lat' or column_name == 'long'):
@@ -109,7 +109,7 @@ class RDFMapper:
                      row_rdf.add((entity_uri, NA_SCHEMA_NS['place_name_modifier'], Literal(modifier)))
                      row_rdf.add((entity_uri, NA_SCHEMA_NS['place_name_basic_element'], Literal(basic_element)))
         # end column loop
-
+        
         return row_rdf
 
     def place_types_map_row_to_rdf(self, row):
@@ -291,10 +291,10 @@ class RDFMapper:
         bind_namespaces(self.schema)
 
         data = self.data.serialize(format="turtle", destination=destination_data)
-        schema = self.schema.serialize(format="turtle", destination=destination_schema)
+        # schema = self.schema.serialize(format="turtle", destination=destination_schema)
 
         self.log.info('Data serialized to %s' % destination_data)
-        self.log.info('Schema serialized to %s' % destination_schema)
+        # self.log.info('Schema serialized to %s' % destination_schema)
 
         return data, schema  # Return for testing purposes
 
@@ -324,18 +324,6 @@ class RDFMapper:
             row_rdf = self.places_map_row_to_rdf(self.table.iloc[index])
             if row_rdf is not None:
                 self.data += row_rdf
-
-        # generate schema RDF
-        for prop in self.mapping.values():
-
-            if 'uri' in prop:
-                self.schema.add((prop['uri'], RDF.type, RDF.Property))
-                if 'name_fi' in prop:
-                    self.schema.add((prop['uri'], SKOS.prefLabel, Literal(prop['name_fi'], lang='fi')))
-                if 'name_en' in prop:
-                    self.schema.add((prop['uri'], SKOS.prefLabel, Literal(prop['name_en'], lang='en')))
-            else:
-                continue
 
     def place_types_process_rows(self):
         """
@@ -367,10 +355,10 @@ if __name__ == "__main__":
     print('Place types serialized to %s' % output_dir)
 
     # Then convert the Names Archive CSV dump into RDF
-    places_input = 'source_data/nimiarkisto.fi-CC-BY-4.0_2019-03-29_1000.csv'
+    places_input = 'source_data/nimiarkisto.fi-CC-BY-4.0_2020-01-20-first-1000-lines.csv'
     mapper = RDFMapper(KOTUS_MAPPING, HIPLA_SCHEMA_NS['Place'], 'create_places', loglevel=args.loglevel.upper())
     mapper.read_csv(places_input)
     print('Data read from CSV %s' % places_input)
     mapper.places_process_rows()
-    mapper.serialize(output_dir + "kotus-names-archive.ttl", output_dir + "kotus-names-archive-schema.ttl")
+    mapper.serialize(output_dir + "kotus-names-archive.ttl", None)
     print('Names archive data and schema serialized to %s' % output_dir)

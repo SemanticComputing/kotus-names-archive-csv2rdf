@@ -1,12 +1,5 @@
 # Input files
-nimiarkisto_with_wsg84.csv
-nimiarkisto.csv
-Kotus_Nadigi_050318.csv
-Kotus_Nadigi_270418.csv
-Kotus_nadigi_testi_*
-nimiarkisto.fi-CC-BY-4.0_2019-03-29.csv
-kotus_place_types.bin
-
+nimiarkisto.fi-CC-BY-4.0_*
 
 # Output files
 output
@@ -33,7 +26,6 @@ var
 sdist
 develop-eggs
 .installed.cfg
-
 
 # Installer logs
 pip-log.txt
